@@ -53,11 +53,9 @@ local function ReportToUser(sealsAvailable)
 		
 	end
 	if (sealsAvailable > 0) then
-		C_Timer.After(2, function()
-			Print("-----------------------------------");
-			Print("You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
-			Print("-----------------------------------");
-		end);
+		Print("-----------------------------------");
+		Print("You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
+		Print("-----------------------------------");
 	end
 end
 
