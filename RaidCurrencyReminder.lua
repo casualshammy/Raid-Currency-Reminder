@@ -4,7 +4,7 @@
 local sealCurrencyID = 1129;
 local maxSealsFromQuests = 3;
 local sealTexture = [[Interface\Icons\achievement_battleground_templeofkotmogu_02_green]];
-local intervalBetweenPeriodicNotifications = 1800;
+local intervalBetweenPeriodicNotifications = 900;
 ---------------------
 
 local LDBPlugin;
@@ -29,7 +29,7 @@ local function Print(...)
 	for i = 1, select("#", ...) do
 		text = text..tostring(select(i, ...)).." "
 	end
-	DEFAULT_CHAT_FRAME:AddMessage(format("RCR: %s", text), 1, 0.5, 0);
+	DEFAULT_CHAT_FRAME:AddMessage(format("%s", text), 1, 0.5, 0);
 end
 
 local function ReportToUser(sealsAvailable)
@@ -54,9 +54,9 @@ local function ReportToUser(sealsAvailable)
 	end
 	if (sealsAvailable > 0) then
 		C_Timer.After(2, function()
-			Print("-----------------------");
+			Print("-----------------------------------");
 			Print("You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
-			Print("-----------------------");
+			Print("-----------------------------------");
 		end);
 	end
 end
@@ -78,7 +78,7 @@ eFrame:SetScript("OnEvent", function(this, event, ...)
 	if (event == "QUEST_TURNED_IN") then
 		local questID = ...;
 		if (tContains(quests, questID)) then
-			OnQuestStateChanged();
+			C_Timer.After(1, OnQuestStateChanged); -- // because it lags
 		end
 	elseif (event == "LOADING_SCREEN_DISABLED") then
 		C_Timer.After(3, OnQuestStateChanged);
