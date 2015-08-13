@@ -1,0 +1,12 @@
+## Interface: 60200
+## Title: Raid Currency Reminder
+## Notes: You never miss bonus roll!
+## SavedVariables: 
+
+# Embeds
+libs\LibStub\LibStub.lua
+libs\CallbackHandler-1.0\CallbackHandler-1.0.xml
+libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+
+# Lua code
+RaidCurrencyReminder.lua
