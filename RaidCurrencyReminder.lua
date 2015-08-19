@@ -34,9 +34,27 @@ local function Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(format("%s", text), 1, 0.5, 0);
 end
 
+local function PlayerOwnsBunker()
+	local t = C_Garrison.GetPlots();
+	if (t ~= nil and #t > 0) then
+		for index, value in pairs(t) do
+			if (value.size == 3) then
+				local buildingID, buildingName, _, _, _, rank = C_Garrison.GetOwnedBuildingInfo(value.id);
+				if (buildingID == 10) then
+					return true;
+				end
+			end
+		end
+	end
+	return false;
+end
+
 local function PrintInfo(seals)
 	Print("-----------------------------------");
 	Print("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
+	if (PlayerOwnsBunker() and not IsQuestFlaggedCompleted(36058)) then
+		Print("Don't forget about Bunker/Mill in your garrison!");
+	end
 	Print("-----------------------------------");
 end
 
