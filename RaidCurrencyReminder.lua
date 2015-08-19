@@ -23,6 +23,7 @@ local quests = {
 	36056, -- // g_res
 	37456, -- // 2x g_res
 	37457, -- // 4x g_res
+	36058, -- // Bunker/Mill
 };
 
 local function Print(...)
@@ -33,30 +34,9 @@ local function Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(format("%s", text), 1, 0.5, 0);
 end
 
-local function PlayerOwnsBunker()
-	local t = C_Garrison.GetPlots();
-	if (t ~= nil and #t > 0) then
-		for index, value in pairs(t) do
-			if (value.size == 3) then
-				local buildingID, buildingName, _, _, _, rank = C_Garrison.GetOwnedBuildingInfo(value.id);
-				if (buildingID == 10) then
-					return true;
-				end
-			end
-		end
-	else
-		return false;
-	end
-end
-
 local function PrintInfo(seals)
 	Print("-----------------------------------");
-	if (PlayerOwnsBunker()) then
-		Print("You can buy "..tostring(seals).." (+1 from bunker) "..GetCurrencyLink(sealCurrencyID));
-		Print("Please take "..GetCurrencyLink(sealCurrencyID).." in bunker first! RCR can't track bunker currency");
-	else
-		Print("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
-	end
+	Print("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
 	Print("-----------------------------------");
 end
 
@@ -88,12 +68,7 @@ local function ReportToUser(sealsAvailable)
 end
 
 local function OnQuestStateChanged()
-	local counter;
-	if (PlayerOwnsBunker()) then
-		counter = maxSealsFromQuests - 1;
-	else
-		counter = maxSealsFromQuests;
-	end
+	local counter = maxSealsFromQuests;
 	for _, questID in pairs(quests) do
 		if (IsQuestFlaggedCompleted(questID)) then
 			counter = counter - 1;
