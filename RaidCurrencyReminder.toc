@@ -1,6 +1,6 @@
 ## Interface: 60200
 ## Title: Raid Currency Reminder
-## Notes: You never miss bonus roll!
+## Notes: You won't forget to buy bonus roll items!
 ## SavedVariables: 
 
 # Embeds

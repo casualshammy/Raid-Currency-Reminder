@@ -4,6 +4,7 @@
 local sealCurrencyID = 1129;
 local maxSealsFromQuests = 3;
 local sealTexture = [[Interface\Icons\achievement_battleground_templeofkotmogu_02_green]];
+local sealTextureBW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
 local intervalBetweenPeriodicNotifications = 900;
 ---------------------
 
@@ -32,35 +33,67 @@ local function Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(format("%s", text), 1, 0.5, 0);
 end
 
+local function PlayerOwnsBunker()
+	local t = C_Garrison.GetPlots();
+	if (t ~= nil and #t > 0) then
+		for index, value in pairs(t) do
+			if (value.size == 3) then
+				local buildingID, buildingName, _, _, _, rank = C_Garrison.GetOwnedBuildingInfo(value.id);
+				if (buildingID == 10) then
+					return true;
+				end
+			end
+		end
+	else
+		return false;
+	end
+end
+
+local function PrintInfo(seals)
+	Print("-----------------------------------");
+	if (PlayerOwnsBunker()) then
+		Print("You can buy "..tostring(seals).." (+1 from bunker) "..GetCurrencyLink(sealCurrencyID));
+		Print("Please take "..GetCurrencyLink(sealCurrencyID).." in bunker first! RCR can't track bunker currency");
+	else
+		Print("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
+	end
+	Print("-----------------------------------");
+end
+
 local function ReportToUser(sealsAvailable)
 	if (LDBPlugin ~= nil) then
 		if (sealsAvailable == 0) then
 			LDBPlugin.text = nil;
+			LDBPlugin.icon = sealTextureBW;
 			LDBPlugin.OnTooltipShow = function(tooltip)
 				tooltip:AddLine("Raid Currency Reminder");
 				tooltip:AddLine(" ");
-				tooltip:AddLine("You have already obtained all possible "..GetCurrencyLink(sealCurrencyID));
+				tooltip:AddLine("You have already bought all possible "..GetCurrencyLink(sealCurrencyID));
 			end;
 		else
-			LDBPlugin.text = "You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID);
+			LDBPlugin.text = tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID);
+			LDBPlugin.icon = sealTexture;
 			LDBPlugin.OnTooltipShow = function(tooltip)
 				tooltip:AddLine("Raid Currency Reminder");
 				tooltip:AddLine(" ");
-				tooltip:AddLine("You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
+				tooltip:AddLine("You can buy "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
 			end;
 		end
 	else
 		
 	end
 	if (sealsAvailable > 0) then
-		Print("-----------------------------------");
-		Print("You can obtain "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
-		Print("-----------------------------------");
+		PrintInfo(sealsAvailable);
 	end
 end
 
 local function OnQuestStateChanged()
-	local counter = maxSealsFromQuests;
+	local counter;
+	if (PlayerOwnsBunker()) then
+		counter = maxSealsFromQuests - 1;
+	else
+		counter = maxSealsFromQuests;
+	end
 	for _, questID in pairs(quests) do
 		if (IsQuestFlaggedCompleted(questID)) then
 			counter = counter - 1;
