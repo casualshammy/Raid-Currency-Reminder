@@ -37,7 +37,7 @@ end
 local function PlayerOwnsBunker()
 	local t = C_Garrison.GetPlots();
 	if (t ~= nil and #t > 0) then
-		for index, value in pairs(t) do
+		for _, value in pairs(t) do
 			if (value.size == 3) then
 				local buildingID, buildingName, _, _, _, rank = C_Garrison.GetOwnedBuildingInfo(value.id);
 				if (buildingID == 10) then
@@ -58,9 +58,9 @@ local function PrintInfo(seals)
 	Print("-----------------------------------");
 end
 
-local function ReportToUser(sealsAvailable)
+local function UpdatePlugin(seals)
 	if (LDBPlugin ~= nil) then
-		if (sealsAvailable == 0) then
+		if (seals == 0) then
 			LDBPlugin.text = nil;
 			LDBPlugin.icon = sealTextureBW;
 			LDBPlugin.OnTooltipShow = function(tooltip)
@@ -69,43 +69,62 @@ local function ReportToUser(sealsAvailable)
 				tooltip:AddLine("You have already bought all possible "..GetCurrencyLink(sealCurrencyID));
 			end;
 		else
-			LDBPlugin.text = tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID);
+			LDBPlugin.text = tostring(seals).." "..GetCurrencyLink(sealCurrencyID);
 			LDBPlugin.icon = sealTexture;
 			LDBPlugin.OnTooltipShow = function(tooltip)
 				tooltip:AddLine("Raid Currency Reminder");
 				tooltip:AddLine(" ");
-				tooltip:AddLine("You can buy "..tostring(sealsAvailable).." "..GetCurrencyLink(sealCurrencyID));
+				tooltip:AddLine("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
 			end;
 		end
-	else
-		
-	end
-	if (sealsAvailable > 0) then
-		PrintInfo(sealsAvailable);
 	end
 end
 
-local function OnQuestStateChanged()
+local function GetAvailableSeals()
 	local counter = maxSealsFromQuests;
 	for _, questID in pairs(quests) do
 		if (IsQuestFlaggedCompleted(questID)) then
 			counter = counter - 1;
 		end
 	end
-	ReportToUser(counter);
+	return counter;
+end
+
+local function QUEST_TURNED_IN(...)
+	local questID = ...;
+	if (tContains(quests, questID)) then
+		C_Timer.After(1, function()							-- // --------------
+			local availableSeals = GetAvailableSeals();		-- // because it lags
+			UpdatePlugin(availableSeals);					-- // --------------
+		end);												-- // --------------
+	end
+end
+
+local function LOADING_SCREEN_DISABLED()
+	C_Timer.After(3, function()
+		local availableSeals = GetAvailableSeals();
+		if (availableSeals > 0) then
+			PrintInfo(availableSeals);
+		end
+	end);
+end
+
+local function CURRENCY_DISPLAY_UPDATE()
+	local availableSeals = GetAvailableSeals();
+	UpdatePlugin(availableSeals);
 end
 
 local eFrame = CreateFrame("frame");
 eFrame:RegisterEvent("QUEST_TURNED_IN");
 eFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
+eFrame:RegisterEvent("CURRENCY_DISPLAY_UPDATE");
 eFrame:SetScript("OnEvent", function(this, event, ...)
 	if (event == "QUEST_TURNED_IN") then
-		local questID = ...;
-		if (tContains(quests, questID)) then
-			C_Timer.After(1, OnQuestStateChanged); -- // because it lags
-		end
+		QUEST_TURNED_IN(...);
 	elseif (event == "LOADING_SCREEN_DISABLED") then
-		C_Timer.After(3, OnQuestStateChanged);
+		LOADING_SCREEN_DISABLED();
+	elseif (event == "CURRENCY_DISPLAY_UPDATE") then
+		CURRENCY_DISPLAY_UPDATE();
 	end
 end);
 
@@ -122,7 +141,10 @@ if (ldb ~= nil) then
 end
 
 local function OnTimerElapsed()
-	OnQuestStateChanged();
+	local availableSeals = GetAvailableSeals();
+	if (availableSeals > 0) then
+		PrintInfo(availableSeals);
+	end
 	C_Timer.After(intervalBetweenPeriodicNotifications, OnTimerElapsed);
 end
 
