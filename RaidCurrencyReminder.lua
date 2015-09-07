@@ -9,6 +9,7 @@ local intervalBetweenPeriodicNotifications = 900;
 ---------------------
 
 local LDBPlugin;
+local LastAvailableSealsAmount = 0;
 
 local quests = {
 	36054, -- // gold
@@ -49,9 +50,9 @@ local function PlayerOwnsBunker()
 	return false;
 end
 
-local function PrintInfo(seals)
+local function PrintInfo(amount)
 	Print("-----------------------------------");
-	Print("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
+	Print("You can buy "..tostring(amount).." "..GetCurrencyLink(sealCurrencyID));
 	if (PlayerOwnsBunker() and not IsQuestFlaggedCompleted(36058)) then
 		Print("Don't forget about Bunker/Mill in your garrison!");
 	end
@@ -101,21 +102,34 @@ local function QUEST_TURNED_IN(...)
 end
 
 local function LOADING_SCREEN_DISABLED()
-	C_Timer.After(3, function()
-		local availableSeals = GetAvailableSeals();
-		if (availableSeals > 0) then
+	local availableSeals = GetAvailableSeals();
+	UpdatePlugin(availableSeals);
+	if (availableSeals > 0) then
+		C_Timer.After(3, function()
 			PrintInfo(availableSeals);
-		end
-	end);
+		end);
+	end
 end
 
 local function CURRENCY_DISPLAY_UPDATE()
+	-- // todo
+	C_Timer.After(1, function()
+		local availableSeals = GetAvailableSeals();
+		UpdatePlugin(availableSeals);
+	end);
+end
+
+local function eFrame_OnElapsed()
 	local availableSeals = GetAvailableSeals();
-	UpdatePlugin(availableSeals);
+	if (LastAvailableSealsAmount ~= availableSeals) then
+		UpdatePlugin(availableSeals);
+		LastAvailableSealsAmount = availableSeals;
+	end
 end
 
 local eFrame = CreateFrame("frame");
-eFrame:RegisterEvent("QUEST_TURNED_IN");
+eFrame.elapsed = 0;
+-- // eFrame:RegisterEvent("QUEST_TURNED_IN");
 eFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
 eFrame:RegisterEvent("CURRENCY_DISPLAY_UPDATE");
 eFrame:SetScript("OnEvent", function(this, event, ...)
@@ -127,13 +141,20 @@ eFrame:SetScript("OnEvent", function(this, event, ...)
 		CURRENCY_DISPLAY_UPDATE();
 	end
 end);
+eFrame:SetScript("OnUpdate", function(this, elapsed)		-- // CURRENCY_DISPLAY_UPDATE, QUEST_TURNED_IN don't work. IsQuestFlaggedCompleted returns irrelevant info during this events.
+	this.elapsed = this.elapsed + elapsed;
+	if (this.elapsed >= 1.0) then
+		eFrame_OnElapsed();
+		this.elapsed = 0;
+	end
+end);
 
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1", true);
 if (ldb ~= nil) then
 	LDBPlugin = ldb:NewDataObject("RCR_LDB",
 		{
 			type = "data source",
-			text = "Test",
+			text = "N/A",
 			icon = sealTexture,
 			tocname = "RaidCurrencyReminder",
 		}
