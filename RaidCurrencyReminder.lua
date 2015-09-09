@@ -7,6 +7,7 @@ local sealTexture = [[Interface\Icons\achievement_battleground_templeofkotmogu_0
 local sealTextureBW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
 local intervalBetweenPeriodicNotifications = 900;
 ---------------------
+---------------------
 
 local LDBPlugin;
 local LastAvailableSealsAmount = 0;
@@ -59,9 +60,9 @@ local function PrintInfo(amount)
 	Print("-----------------------------------");
 end
 
-local function UpdatePlugin(seals)
+local function UpdatePlugin(amount)
 	if (LDBPlugin ~= nil) then
-		if (seals == 0) then
+		if (amount == 0) then
 			LDBPlugin.text = nil;
 			LDBPlugin.icon = sealTextureBW;
 			LDBPlugin.OnTooltipShow = function(tooltip)
@@ -70,12 +71,12 @@ local function UpdatePlugin(seals)
 				tooltip:AddLine("You have already bought all possible "..GetCurrencyLink(sealCurrencyID));
 			end;
 		else
-			LDBPlugin.text = tostring(seals).." "..GetCurrencyLink(sealCurrencyID);
+			LDBPlugin.text = tostring(amount).." "..GetCurrencyLink(sealCurrencyID);
 			LDBPlugin.icon = sealTexture;
 			LDBPlugin.OnTooltipShow = function(tooltip)
 				tooltip:AddLine("Raid Currency Reminder");
 				tooltip:AddLine(" ");
-				tooltip:AddLine("You can buy "..tostring(seals).." "..GetCurrencyLink(sealCurrencyID));
+				tooltip:AddLine("You can buy "..tostring(amount).." "..GetCurrencyLink(sealCurrencyID));
 			end;
 		end
 	end
@@ -91,16 +92,6 @@ local function GetAvailableSeals()
 	return counter;
 end
 
-local function QUEST_TURNED_IN(...)
-	local questID = ...;
-	if (tContains(quests, questID)) then
-		C_Timer.After(1, function()							-- // --------------
-			local availableSeals = GetAvailableSeals();		-- // because it lags
-			UpdatePlugin(availableSeals);					-- // --------------
-		end);												-- // --------------
-	end
-end
-
 local function LOADING_SCREEN_DISABLED()
 	local availableSeals = GetAvailableSeals();
 	UpdatePlugin(availableSeals);
@@ -109,14 +100,6 @@ local function LOADING_SCREEN_DISABLED()
 			PrintInfo(availableSeals);
 		end);
 	end
-end
-
-local function CURRENCY_DISPLAY_UPDATE()
-	-- // todo
-	C_Timer.After(1, function()
-		local availableSeals = GetAvailableSeals();
-		UpdatePlugin(availableSeals);
-	end);
 end
 
 local function eFrame_OnElapsed()
@@ -129,29 +112,23 @@ end
 
 local eFrame = CreateFrame("frame");
 eFrame.elapsed = 0;
--- // eFrame:RegisterEvent("QUEST_TURNED_IN");
 eFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
-eFrame:RegisterEvent("CURRENCY_DISPLAY_UPDATE");
 eFrame:SetScript("OnEvent", function(this, event, ...)
-	if (event == "QUEST_TURNED_IN") then
-		QUEST_TURNED_IN(...);
-	elseif (event == "LOADING_SCREEN_DISABLED") then
+	if (event == "LOADING_SCREEN_DISABLED") then
 		LOADING_SCREEN_DISABLED();
-	elseif (event == "CURRENCY_DISPLAY_UPDATE") then
-		CURRENCY_DISPLAY_UPDATE();
 	end
 end);
-eFrame:SetScript("OnUpdate", function(this, elapsed)		-- // CURRENCY_DISPLAY_UPDATE, QUEST_TURNED_IN don't work. IsQuestFlaggedCompleted returns irrelevant info during this events.
-	this.elapsed = this.elapsed + elapsed;
-	if (this.elapsed >= 1.0) then
-		eFrame_OnElapsed();
-		this.elapsed = 0;
-	end
-end);
+eFrame:SetScript("OnUpdate", function(this, elapsed)		-- // -------------------------------------------------------------------------------------------------------------------------
+	this.elapsed = this.elapsed + elapsed;					-- // -------------------------------------------------------------------------------------------------------------------------
+	if (this.elapsed >= 1.0) then							-- // CURRENCY_DISPLAY_UPDATE, QUEST_TURNED_IN don't work. IsQuestFlaggedCompleted returns irrelevant info during this events.
+		eFrame_OnElapsed();									-- // So I'm using timer to solve it.
+		this.elapsed = 0;									-- // -------------------------------------------------------------------------------------------------------------------------
+	end														-- // -------------------------------------------------------------------------------------------------------------------------
+end);														-- // -------------------------------------------------------------------------------------------------------------------------
 
 local ldb = LibStub:GetLibrary("LibDataBroker-1.1", true);
 if (ldb ~= nil) then
-	LDBPlugin = ldb:NewDataObject("RCR_LDB",
+	LDBPlugin = ldb:NewDataObject("Raid Currency Reminder",
 		{
 			type = "data source",
 			text = "N/A",
