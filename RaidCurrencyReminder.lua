@@ -3,6 +3,7 @@
 ---------------------
 local sealCurrencyID = 1129;
 local maxSealsFromQuests = 3;
+local maxSealsPerCharacter = 10;
 local sealTexture = [[Interface\Icons\achievement_battleground_templeofkotmogu_02_green]];
 local sealTextureBW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
 local intervalBetweenPeriodicNotifications = 900;
@@ -83,13 +84,15 @@ local function UpdatePlugin(amount)
 end
 
 local function GetAvailableSeals()
-	local counter = maxSealsFromQuests;
+	local _, amount = GetCurrencyInfo(sealCurrencyID);
+	local possible = min(maxSealsFromQuests, maxSealsPerCharacter - amount);
+	local numQuestsAvailable = maxSealsFromQuests;
 	for _, questID in pairs(quests) do
 		if (IsQuestFlaggedCompleted(questID)) then
-			counter = counter - 1;
+			numQuestsAvailable = numQuestsAvailable - 1;
 		end
 	end
-	return counter;
+	return min(numQuestsAvailable, possible);
 end
 
 local function LOADING_SCREEN_DISABLED()
