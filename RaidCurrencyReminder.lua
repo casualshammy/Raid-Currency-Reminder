@@ -35,6 +35,7 @@ local quests = {
 local holidayEvents = {
 	["calendar_weekendburningcrusade"] = 	 39020,
 	["calendar_weekendwrathofthelichking"] = 39021,
+	["calendar_weekendcataclysm"] = 		 40792,
 };
 
 local function Print(...)
