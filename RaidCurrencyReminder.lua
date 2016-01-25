@@ -9,12 +9,14 @@ local SEAL_TEXTURE = [[Interface\Icons\achievement_battleground_templeofkotmogu_
 local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
 local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID);
 local INTERVAL_BETWEEN_PERIODIC_NOTIFICATIONS = 900;
+local MIN_INTERVAL_BETWEEN_PRINTS = 30;
 ---------------------
 ---------------------
 
 local LDBPlugin;
 local LastAvailableSealsAmount = -1;
 local CalendarOpened = false;
+local LastTimePrint = 0;
 
 local quests = {
 	36054, -- // gold
@@ -146,10 +148,11 @@ end
 
 local function LOADING_SCREEN_DISABLED()
 	UpdatePlugin();
-	if (GetNumObtainableSeals() > 0) then
+	if (GetTime() - LastTimePrint > MIN_INTERVAL_BETWEEN_PRINTS and GetNumObtainableSeals() > 0) then
 		C_Timer.After(3, function()
 			PrintInfo();
 		end);
+		LastTimePrint = GetTime();
 	end
 	if (not CalendarOpened) then
 		C_Timer.After(1.0, function()
@@ -197,8 +200,9 @@ if (ldb ~= nil) then
 end
 
 local function OnTimerElapsed()
-	if (GetNumObtainableSeals() > 0) then
+	if (GetTime() - LastTimePrint > MIN_INTERVAL_BETWEEN_PRINTS and GetNumObtainableSeals() > 0) then
 		PrintInfo();
+		LastTimePrint = GetTime();
 	end
 	C_Timer.After(INTERVAL_BETWEEN_PERIODIC_NOTIFICATIONS, OnTimerElapsed);
 end
