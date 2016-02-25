@@ -17,6 +17,7 @@ local LDBPlugin;
 local LastAvailableSealsAmount = -1;
 local CalendarOpened = false;
 local LastTimePrint = 0;
+local DisablePrintUntilReload = false;
 
 local quests = {
 	36054, -- // gold
@@ -39,6 +40,10 @@ local holidayEvents = {
 	["calendar_weekendwrathofthelichking"] = 39021,
 	["calendar_weekendcataclysm"] = 		 40792,
 };
+
+local function ColorizeText(text, r, g, b)
+	return format("|cff%02x%02x%02x%s|r", r*255, g*255, b*255, text);
+end
 
 local function Print(...)
 	local text = "";
@@ -101,18 +106,20 @@ local function GetNumObtainableSeals()
 end
 
 local function PrintInfo()
-	Print("-----------------------------------");
-	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
-	if (numFromQuests > 0) then
-		Print(format("You can buy %s %s", numFromQuests, SEAL_LINK));
+	if (not DisablePrintUntilReload) then
+		Print("-----------------------------------");
+		local numFromQuests, numFromHoliday = GetNumAvailableSeals();
+		if (numFromQuests > 0) then
+			Print(format("You can buy %s %s", numFromQuests, SEAL_LINK));
+		end
+		if (numFromHoliday > 0) then
+			Print(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
+		end
+		if (PlayerOwnsBunker() and not IsQuestFlaggedCompleted(36058)) then
+			Print("Don't forget about Bunker/Mill in your garrison!");
+		end
+		Print("-----------------------------------");
 	end
-	if (numFromHoliday > 0) then
-		Print(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
-	end
-	if (PlayerOwnsBunker() and not IsQuestFlaggedCompleted(36058)) then
-		Print("Don't forget about Bunker/Mill in your garrison!");
-	end
-	Print("-----------------------------------");
 end
 
 local function UpdatePlugin()
@@ -141,6 +148,12 @@ local function UpdatePlugin()
 			end
 			if ((numFromHoliday + numFromQuests) == 0) then
 				tooltip:AddLine("You have already got all possible "..SEAL_LINK);
+			end
+			tooltip:AddLine(" ");
+			if (DisablePrintUntilReload) then
+				tooltip:AddLine(ColorizeText("Chat notifications are disabled for this game session", 1, 0, 0));
+			else
+				tooltip:AddLine("|cffeda55fRightClick:|r disable chat notifications for this session");
 			end
 		end;
 	end
@@ -197,6 +210,12 @@ if (ldb ~= nil) then
 			tocname = "RaidCurrencyReminder",
 		}
 	);
+	LDBPlugin.OnClick = function(display, button)
+		if (button == "RightButton" and not DisablePrintUntilReload) then
+			DisablePrintUntilReload = true;
+			Print("Chat notifications are disabled for this game session");
+		end
+	end
 end
 
 local function OnTimerElapsed()
