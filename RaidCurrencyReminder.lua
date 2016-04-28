@@ -150,6 +150,7 @@ local function UpdatePlugin()
 				tooltip:AddLine("You have already got all possible "..SEAL_LINK);
 			end
 			tooltip:AddLine(" ");
+			tooltip:AddLine("|cffeda55fLeftClick:|r open currencies tab");
 			if (DisablePrintUntilReload) then
 				tooltip:AddLine(ColorizeText("Chat notifications are disabled for this game session", 1, 0, 0));
 			else
@@ -214,6 +215,9 @@ if (ldb ~= nil) then
 		if (button == "RightButton" and not DisablePrintUntilReload) then
 			DisablePrintUntilReload = true;
 			Print("Chat notifications are disabled for this game session");
+		end
+		if (button == "LeftButton") then
+			ToggleCharacter("TokenFrame");
 		end
 	end
 end
