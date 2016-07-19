@@ -54,7 +54,7 @@ local function Print(...)
 end
 
 local function PlayerOwnsBunker()
-	local t = C_Garrison.GetPlots();
+	local t = C_Garrison.GetPlots(LE_FOLLOWER_TYPE_GARRISON_6_0);
 	if (t ~= nil and #t > 0) then
 		for _, value in pairs(t) do
 			if (value.size == 3) then
