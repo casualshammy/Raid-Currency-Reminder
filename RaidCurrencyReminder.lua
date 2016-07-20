@@ -3,7 +3,7 @@
 ---------------------
 local SEAL_CURRENCY_ID = 1129;
 local MAX_SEALS_FROM_QUESTS = 3;
-local MAX_SEALS_PER_CHARACTER = 10;
+local MAX_SEALS_PER_CHARACTER = 20;
 local MIN_CHARACTER_LEVEL_REQUIRED = 100;
 local SEAL_TEXTURE = [[Interface\Icons\achievement_battleground_templeofkotmogu_02_green]];
 local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
