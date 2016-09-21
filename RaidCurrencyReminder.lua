@@ -1,12 +1,12 @@
 ﻿---------------------
 ----- Constants -----
 ---------------------
-local SEAL_CURRENCY_ID = 1129;
+local SEAL_CURRENCY_ID = 1273;
 local MAX_SEALS_FROM_QUESTS = 3;
-local MAX_SEALS_PER_CHARACTER = 20;
-local MIN_CHARACTER_LEVEL_REQUIRED = 100;
-local SEAL_TEXTURE = [[Interface\Icons\achievement_battleground_templeofkotmogu_02_green]];
-local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\achievement_battleground_templeofkotmogu_02_green_bw.tga]];
+local MAX_SEALS_PER_CHARACTER = 6;
+local MIN_CHARACTER_LEVEL_REQUIRED = 110;
+local SEAL_TEXTURE = [[Interface\Icons\inv_misc_elvencoins]];
+local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\inv_misc_elvencoins_bw.tga]];
 local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID);
 local INTERVAL_BETWEEN_PERIODIC_NOTIFICATIONS = 900;
 local MIN_INTERVAL_BETWEEN_PRINTS = 30;
@@ -20,25 +20,18 @@ local LastTimePrint = 0;
 local DisablePrintUntilReload = false;
 
 local quests = {
-	36054, -- // gold
-	37454, -- // 2x gold
-	37455, -- // 4x gold
-	36055, -- // apexis
-	37452, -- // 2x apexis
-	37453, -- // 4x apexis
-	36057, -- // honor
-	37458, -- // 2x honor
-	37459, -- // 4x honor
-	36056, -- // g_res
-	37456, -- // 2x g_res
-	37457, -- // 4x g_res
-	36058, -- // Bunker/Mill
+	43892,	-- // 1000 class hall
+	43893,	-- // 2000 class hall
+	43894,	-- // 4000 class hall
+	43895,	-- // 1000 gold
+	43896,	-- // 2000 gold
+	43897,	-- // 4000 gold
 };
 
 local holidayEvents = {
-	["calendar_weekendburningcrusade"] = 	 39020,
-	["calendar_weekendwrathofthelichking"] = 39021,
-	["calendar_weekendcataclysm"] = 		 40792,
+	-- ["calendar_weekendburningcrusade"] = 	 39020,
+	-- ["calendar_weekendwrathofthelichking"] = 39021,
+	-- ["calendar_weekendcataclysm"] = 		 40792,
 };
 
 local function ColorizeText(text, r, g, b)
@@ -51,21 +44,6 @@ local function Print(...)
 		text = text..tostring(select(i, ...)).." "
 	end
 	DEFAULT_CHAT_FRAME:AddMessage(text, 1, 0.5, 0);
-end
-
-local function PlayerOwnsBunker()
-	local t = C_Garrison.GetPlots(LE_FOLLOWER_TYPE_GARRISON_6_0);
-	if (t ~= nil and #t > 0) then
-		for _, value in pairs(t) do
-			if (value.size == 3) then
-				local buildingID = C_Garrison.GetOwnedBuildingInfo(value.id);
-				if (buildingID == 10) then
-					return true;
-				end
-			end
-		end
-	end
-	return false;
 end
 
 local function GetNumAvailableSeals()
