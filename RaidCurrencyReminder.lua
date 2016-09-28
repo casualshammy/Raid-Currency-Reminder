@@ -93,9 +93,6 @@ local function PrintInfo()
 		if (numFromHoliday > 0) then
 			Print(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
 		end
-		if (PlayerOwnsBunker() and not IsQuestFlaggedCompleted(36058)) then
-			Print("Don't forget about Bunker/Mill in your garrison!");
-		end
 		Print("-----------------------------------");
 	end
 end
