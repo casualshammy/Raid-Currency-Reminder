@@ -46,6 +46,16 @@ local function Print(...)
 	DEFAULT_CHAT_FRAME:AddMessage(text, 1, 0.5, 0);
 end
 
+local function CompareDates(hourA, minuteA, hourB, minuteB)
+	if (hourA < hourB) then
+		return true;
+	elseif (hourA == hourB and minuteA < minuteB) then
+		return true;
+	else
+		return false;
+	end
+end
+
 local function GetNumAvailableSeals()
 	local numQuestsAvailable = MAX_SEALS_FROM_QUESTS;
 	for _, questID in pairs(quests) do
@@ -59,13 +69,16 @@ local function GetNumAvailableSeals()
 	end
 	
 	local _, _, day = CalendarGetDate();
+	local cHour, cMinute = GetGameTime();
 	for eventIndex = 1, CalendarGetNumDayEvents(0, day) do
-		local _, _, _, calendarType, _, _, texture = CalendarGetDayEvent(0, day, eventIndex);
+		local _, eventHour, eventMinute, calendarType, sequenceType, _, texture = CalendarGetDayEvent(0, day, eventIndex);
 		if (calendarType == "HOLIDAY") then
 			local questID = holidayEvents[texture];
 			if (questID ~= nil) then
-				if (not IsQuestFlaggedCompleted(questID)) then
-					return numQuestsAvailable, 1;
+				if ((sequenceType == "END" and CompareDates(cHour, cMinute, eventHour, eventMinute)) or (sequenceType == "START" and CompareDates(eventHour, eventMinute, cHour, cMinute)) or (sequenceType == "ONGOING" or sequenceType == "INFO")) then
+					if (not IsQuestFlaggedCompleted(questID)) then
+						return numQuestsAvailable, 1;
+					end
 				end
 			end
 		end
@@ -116,7 +129,7 @@ local function UpdatePlugin()
 			tooltip:AddLine("Raid Currency Reminder");
 			tooltip:AddLine(" ");
 			if (numFromQuests > 0) then
-				tooltip:AddLine(format("You can buy %s %s in Ashran", numFromQuests, SEAL_LINK));
+				tooltip:AddLine(format("You can buy %s %s in Dalaran", numFromQuests, SEAL_LINK));
 			end
 			if (numFromHoliday > 0) then
 				tooltip:AddLine(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
