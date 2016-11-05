@@ -1,7 +1,7 @@
 ## Interface: 70100
 ## Title: Raid Currency Reminder
 ## Notes: You won't forget to buy bonus roll items!
-## SavedVariables: 
+## SavedVariables: RaidCurrencyReminderDB
 
 embeds.xml
 RaidCurrencyReminder.lua
