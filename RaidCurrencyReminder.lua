@@ -106,7 +106,7 @@ local function GetNumAvailableSeals()
 		end
 	end
 	if (numQuestsAvailable < 0) then
-		Print("RCR: MAX_SEALS_FROM_QUESTS has incorrect value!");
+		-- Print("RCR: MAX_SEALS_FROM_QUESTS has incorrect value!");
 		numQuestsAvailable = 0;
 	end
 	
@@ -198,18 +198,29 @@ if (ldb ~= nil) then
 	end
 end
 
-local function msg(text)
-  local frameName = "RaidCurrencyReminder-newFrame";
-  if (StaticPopupDialogs[frameName] == nil) then
-    StaticPopupDialogs[frameName] = {
-      text = frameName,
-      button1 = OKAY,
-      timeout = 0,
-      whileDead = true,
-      hideOnEscape = true,
-      preferredIndex = 3,
-    };
+local c_static_popups_created = { };
+
+local function GetStaticPopup()
+  for _, frameName in pairs(c_static_popups_created) do
+    if (StaticPopupDialogs[frameName] ~= nil and not StaticPopup_Visible(frameName)) then
+      return frameName;
+    end
   end
+  local frameName = "RaidCurrencyReminder" .. tostring(#c_static_popups_created);
+  StaticPopupDialogs[frameName] = {
+    text = frameName,
+    button1 = OKAY,
+    timeout = 0,
+    whileDead = true,
+    hideOnEscape = true,
+    preferredIndex = 3 + #c_static_popups_created,
+  };
+  c_static_popups_created[#c_static_popups_created + 1] = frameName;
+  return frameName;
+end
+
+local function msg(text)
+  local frameName = GetStaticPopup();
   StaticPopupDialogs[frameName].text = text;
   StaticPopup_Show(frameName);
 end
@@ -255,23 +266,22 @@ local function ShowPopupAboutMissingSeals()
 	local numObtainable = GetNumObtainableSeals();
 	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
 	if (numObtainable > 0) then
-		if (numFromQuests == 1) then
-			if (not ShouldDeductOneSeal()) then
-				msgWithQuestion(format(
-					"You can still get 1 %s\n\n" ..
-					"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
-					"Have you got seal from work order this week?", SEAL_LINK),
-					function()
-						local _, month, day, year = CalendarGetDate();
-						db.LastDateAskedAboutClassOrderHall = DaysFromCivil(year, month, day);
-					end,
-					function() end);
-			end
-		elseif (numFromQuests > 1) then
+		if (numFromQuests == 1 and not ShouldDeductOneSeal()) then
+			msgWithQuestion(format(
+				"You can still get 1 %s\n\n" ..
+				"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
+				"Have you got seal from work order this week?", SEAL_LINK),
+				function()
+					local _, month, day, year = CalendarGetDate();
+					db.LastDateAskedAboutClassOrderHall = DaysFromCivil(year, month, day);
+					UpdatePlugin();
+				end,
+				function() end);
+		elseif (numFromQuests >= 1) then
 			msg(format("You can still get %s %s from Archmage Lan'dalock in Dalaran", numFromQuests, SEAL_LINK));
 		end
 		if (numFromHoliday > 0) then
-			msg(format("You can still get one %s from weekly event\nVisit Archmage Timear in Dalaran to start quest", SEAL_LINK));
+			msg(format("You can still get one %s from weekly event", SEAL_LINK));
 		end
 		db.LastTimeChecked = GetTime();
 		local _, month, day, year = CalendarGetDate();
