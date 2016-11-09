@@ -302,10 +302,8 @@ local function CheckInfo()
 		GotNewSeal = false;
 		if (db.QuestsCompleted ~= numQuestsCompleted) then -- // we have completed quest in Dalaran
 			UpdatePlugin();
-			print("we have completed quest in Dalaran");
 		else -- // seems like we got seal from work order or mission
 			ShowPopupAboutUnknownSeal();
-			print("seems like we got seal from work order or mission");
 		end
 	end
 	local obtainableSeals = GetNumObtainableSeals();
@@ -355,7 +353,6 @@ newFrame:SetScript("OnEvent", function(self, event, ...)
 		C_Timer.After(1.0, CheckInfo);
 	elseif (event == "CHAT_MSG_CURRENCY") then
 		local msg = ...;
-		Print(msg, ":::::", msg:find(SEAL_LINK, 1, true));
 		if (msg:find(SEAL_LINK, 1, true)) then
 			C_Timer.After(1.0, function() GotNewSeal = true; end);
 		end
