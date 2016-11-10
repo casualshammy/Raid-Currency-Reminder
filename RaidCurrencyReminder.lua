@@ -156,14 +156,24 @@ local function UpdatePlugin()
 		LDBPlugin.OnTooltipShow = function(tooltip)
 			tooltip:AddLine("Raid Currency Reminder");
 			tooltip:AddLine(" ");
-			if (numFromQuests > 0) then
-				tooltip:AddLine(format("You can buy %s %s in Dalaran", numFromQuests, SEAL_LINK));
-			end
-			if (numFromHoliday > 0) then
-				tooltip:AddLine(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
-			end
-			if ((numFromHoliday + numFromQuests) == 0) then
-				tooltip:AddLine("You have already got all possible "..SEAL_LINK);
+			if (numObtainable == 0) then
+				if ((numFromHoliday + numFromQuests) == 0) then
+					tooltip:AddLine("You have already got all possible "..SEAL_LINK);
+				else
+					local _, amount = GetCurrencyInfo(SEAL_CURRENCY_ID);
+					if (amount == MAX_SEALS_PER_CHARACTER) then
+						tooltip:AddLine(format("You can't obtain more %s because you have reached the cap (%s)", SEAL_LINK, MAX_SEALS_PER_CHARACTER));
+					else
+						tooltip:AddLine(format("You can't obtain more %s because you have not reached %s level", SEAL_LINK, MIN_CHARACTER_LEVEL_REQUIRED));
+					end
+				end
+			else
+				if (numFromQuests > 0) then
+					tooltip:AddLine(format("You can buy %s %s", numFromQuests, SEAL_LINK));
+				end
+				if (numFromHoliday > 0) then
+					tooltip:AddLine(format("You can get %s %s from holiday event", numFromHoliday, SEAL_LINK));
+				end
 			end
 			tooltip:AddLine(" ");
 			tooltip:AddLine("|cffeda55fLeftClick:|r open currencies tab");
