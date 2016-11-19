@@ -276,6 +276,7 @@ local function ShowPopupAboutMissingSeals()
 	local numObtainable = GetNumObtainableSeals();
 	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
 	if (numObtainable > 0) then
+		local message = "";
 		if (numFromQuests == 1 and not ShouldDeductOneSeal()) then
 			msgWithQuestion(format(
 				"You can still get 1 %s\n\n" ..
@@ -288,10 +289,13 @@ local function ShowPopupAboutMissingSeals()
 				end,
 				function() end);
 		elseif (numFromQuests >= 1) then
-			msg(format("You can still get %s %s from Archmage Lan'dalock in Dalaran", numFromQuests, SEAL_LINK));
+			message = message .. format("You can still get %s %s from Archmage Lan'dalock in Dalaran\n", numFromQuests, SEAL_LINK);
 		end
 		if (numFromHoliday > 0) then
-			msg(format("You can still get one %s from weekly event", SEAL_LINK));
+			message = message .. format("You can still get one %s from weekly event", SEAL_LINK);
+		end
+		if (message ~= "") then
+			msg(message);
 		end
 		db.LastTimeChecked = GetTime();
 		local _, month, day, year = CalendarGetDate();
@@ -302,11 +306,11 @@ end
 local function ShowPopupAboutUnknownSeal()
 	local numObtainable = GetNumObtainableSeals();
 	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
-	if (numObtainable > 0 and numFromQuests > 0 and not ShouldDeductOneSeal()) then
+	if (numFromQuests > 0 and not ShouldDeductOneSeal()) then -- numObtainable > 0 and 
 		msgWithQuestion(format(
-			"You have just got seal from unknown source\n\n" ..
+			"You have just got %s from unknown source\n\n" ..
 			"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
-			"Have you got this seal from work order?", numObtainable, SEAL_LINK),
+			"Have you got seal from work order?", SEAL_LINK),
 			function()
 				local _, month, day, year = CalendarGetDate();
 				db.LastDateAskedAboutClassOrderHall = DaysFromCivil(year, month, day);
