@@ -37,7 +37,7 @@ local quests = {
 local holidayEvents = {
 	["calendar_weekendburningcrusade"] = 	 44164,
 	["calendar_weekendwrathofthelichking"] = 44166,
-	-- ["calendar_weekendcataclysm"] = 		 40792,
+	["calendar_weekendcataclysm"] = 		 44167,
 };
 
 ---------------------
@@ -279,7 +279,7 @@ local function ShowPopupAboutMissingSeals()
 		local message = "";
 		if (numFromQuests == 1 and not ShouldDeductOneSeal()) then
 			msgWithQuestion(format(
-				"You can still get 1 %s\n\n" ..
+				"You can get 1 %s\n\n" ..
 				"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
 				"Have you got seal from work order this week?", SEAL_LINK),
 				function()
@@ -289,10 +289,10 @@ local function ShowPopupAboutMissingSeals()
 				end,
 				function() end);
 		elseif (numFromQuests >= 1) then
-			message = message .. format("You can still get %s %s from Archmage Lan'dalock in Dalaran\n", numFromQuests, SEAL_LINK);
+			message = message .. format("You can get %s %s from Archmage Lan'dalock in Dalaran\n", numFromQuests, SEAL_LINK);
 		end
 		if (numFromHoliday > 0) then
-			message = message .. format("You can still get one %s from weekly event", SEAL_LINK);
+			message = message .. format("You can get one %s from weekly event", SEAL_LINK);
 		end
 		if (message ~= "") then
 			msg(message);
