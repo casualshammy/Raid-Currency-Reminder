@@ -208,31 +208,20 @@ if (ldb ~= nil) then
 	end
 end
 
-local c_static_popups_created = { };
-
-local function GetStaticPopup()
-  for _, frameName in pairs(c_static_popups_created) do
-    if (StaticPopupDialogs[frameName] ~= nil and not StaticPopup_Visible(frameName)) then
-      return frameName;
-    end
-  end
-  local frameName = "RaidCurrencyReminder" .. tostring(#c_static_popups_created);
-  StaticPopupDialogs[frameName] = {
-    text = frameName,
-    button1 = OKAY,
-    timeout = 0,
-    whileDead = true,
-    hideOnEscape = true,
-    preferredIndex = 3 + #c_static_popups_created,
-  };
-  c_static_popups_created[#c_static_popups_created + 1] = frameName;
-  return frameName;
-end
-
 local function msg(text)
-  local frameName = GetStaticPopup();
-  StaticPopupDialogs[frameName].text = text;
-  StaticPopup_Show(frameName);
+	local frameName = "RCR_StaticPopup";
+	if (not StaticPopupDialogs[frameName]) then
+		StaticPopupDialogs[frameName] = {
+			text = frameName,
+			button1 = OKAY,
+			timeout = 0,
+			whileDead = true,
+			hideOnEscape = true,
+			preferredIndex = 3,
+		};
+	end
+	StaticPopupDialogs[frameName].text = text;
+	StaticPopup_Show(frameName);
 end
 
 local function msgWithQuestion(text, funcOnAccept, funcOnCancel)
@@ -322,21 +311,10 @@ end
 
 local function CheckInfo()
 	local numQuestsCompleted = GetNumQuestsCompleted();
-	if (GotNewSeal) then
-		GotNewSeal = false;
-		if (db.QuestsCompleted ~= numQuestsCompleted) then -- // we have completed quest in Dalaran
-			UpdatePlugin();
-		else -- // seems like we got seal from work order or mission
-			ShowPopupAboutUnknownSeal();
-		end
-	end
 	local obtainableSeals = GetNumObtainableSeals();
-	if (LastAvailableSealsAmount ~= obtainableSeals) then
-		UpdatePlugin();
-		LastAvailableSealsAmount = obtainableSeals;
-	end
 	if (numQuestsCompleted < db.QuestsCompleted) then -- // seems like it's next raid week now
 		db.LastDateAskedAboutClassOrderHall = 0;
+		db.QuestsCompleted = numQuestsCompleted;
 		UpdatePlugin();
 	end
 	if (obtainableSeals > 0) then
@@ -347,10 +325,31 @@ local function CheckInfo()
 			end
 		end
 	end
-	--print(format("Quests completed: %s; DB quest completed: %s; ObtainableSeals: %s; GetNumAvailableSeals: %s; ShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, obtainableSeals, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
-	db.QuestsCompleted = numQuestsCompleted;
+	UpdatePlugin();
+	--print(format("1: Quests completed: %s; DB quest completed: %s; ObtainableSeals: %s; GetNumAvailableSeals: %s; ShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, obtainableSeals, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
 	C_Timer.After(1.0, CheckInfo);
 end
+
+local function OnNewSealReceived()
+	local numQuestsCompleted = GetNumQuestsCompleted();
+	if (db.QuestsCompleted ~= numQuestsCompleted) then
+		-- // we have completed quest in Dalaran
+		UpdatePlugin();
+	else
+		-- // seems like we got seal from work order or mission
+		ShowPopupAboutUnknownSeal();
+	end
+	--print(format("2: Quests completed: %s; DB quest completed: %s; GetNumAvailableSeals: %s; ShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
+	db.QuestsCompleted = numQuestsCompleted;
+end
+
+-- // todo: delete-start
+function y123()
+	local numQuestsCompleted = GetNumQuestsCompleted();
+	local obtainableSeals = GetNumObtainableSeals();
+	print(format("1: Quests completed: %s;\nDB quest completed: %s;\nObtainableSeals: %s;\nGetNumAvailableSeals: %s;\nShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, obtainableSeals, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
+end
+-- // todo: delete-end
 
 local newFrame = CreateFrame("frame");
 newFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
@@ -374,11 +373,14 @@ newFrame:SetScript("OnEvent", function(self, event, ...)
 		else
 			LastTimerPopupDisplayed = db.LastTimeChecked;
 		end
-		C_Timer.After(1.0, CheckInfo);
+		C_Timer.After(1.0, function()
+			UpdatePlugin();
+			CheckInfo();
+		end);
 	elseif (event == "CHAT_MSG_CURRENCY") then
 		local msg = ...;
 		if (msg:find(SEAL_LINK, 1, true)) then
-			C_Timer.After(1.0, function() GotNewSeal = true; end);
+			C_Timer.After(1.0, OnNewSealReceived);
 		end
 	end
 end);
