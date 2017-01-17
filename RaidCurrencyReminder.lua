@@ -228,11 +228,8 @@ local function msgWithQuestion(text, funcOnAccept, funcOnCancel)
   local frameName = "RaidCurrencyReminder-newFrame-question";
   if (StaticPopupDialogs[frameName] == nil) then
     StaticPopupDialogs[frameName] = {
-      text = frameName,
       button1 = "Yes",
 	  button2 = "No",
-	  OnAccept = funcOnAccept,
-	  OnCancel = funcOnCancel,
       timeout = 0,
       whileDead = true,
       hideOnEscape = true,
@@ -240,6 +237,8 @@ local function msgWithQuestion(text, funcOnAccept, funcOnCancel)
     };
   end
   StaticPopupDialogs[frameName].text = text;
+  StaticPopupDialogs[frameName].OnAccept = funcOnAccept;
+  StaticPopupDialogs[frameName].OnCancel = funcOnCancel;
   StaticPopup_Show(frameName);
 end
 
