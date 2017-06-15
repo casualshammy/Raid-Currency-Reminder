@@ -38,6 +38,7 @@ local holidayEvents = {
 	["calendar_weekendburningcrusade"] = 	 44164,
 	["calendar_weekendwrathofthelichking"] = 44166,
 	["calendar_weekendcataclysm"] = 		 44167,
+	[1530589] = 45799,	-- // MoP
 };
 
 ---------------------
@@ -78,6 +79,27 @@ local function DaysFromCivil(y, m, d)
     local doy = math.modf((153*m + 2)/5) + d-1;              		     	-- [0, 365]
     local doe = yoe * 365 + math.modf(yoe/4) - math.modf(yoe/100) + doy;	-- [0, 146096]
     return era * 146097 + doe - 719468;
+end
+
+local function SafeCall(func)
+	local frame;
+	if (_G["OOC_SecureCall"] == nil) then
+		_G["OOC_SecureCall"] = CreateFrame("frame");
+		frame = _G["OOC_SecureCall"];
+		frame.deferredCalls = { };
+		frame:RegisterEvent("PLAYER_REGEN_ENABLED");
+		frame:SetScript("OnEvent", function(self, event)
+			for _, call in pairs(self.deferredCalls) do
+				call();
+			end
+		end);
+	end
+	frame = frame or _G["OOC_SecureCall"];
+	if (InCombatLockdown()) then
+		tinsert(frame.deferredCalls, func);
+	else
+		func();
+	end
 end
 
 ---------------------
@@ -156,11 +178,12 @@ local function UpdatePlugin()
 		LDBPlugin.OnTooltipShow = function(tooltip)
 			tooltip:AddLine("Raid Currency Reminder");
 			tooltip:AddLine(" ");
+			local _, amount = GetCurrencyInfo(SEAL_CURRENCY_ID);
+			tooltip:AddLine(format("You have %d %s", amount, SEAL_LINK));
 			if (numObtainable == 0) then
 				if ((numFromHoliday + numFromQuests) == 0) then
 					tooltip:AddLine("You have already got all possible "..SEAL_LINK);
 				else
-					local _, amount = GetCurrencyInfo(SEAL_CURRENCY_ID);
 					if (amount == MAX_SEALS_PER_CHARACTER) then
 						tooltip:AddLine(format("You can't obtain more %s because you have reached the cap (%s)", SEAL_LINK, MAX_SEALS_PER_CHARACTER));
 					else
@@ -359,11 +382,13 @@ newFrame:SetScript("OnEvent", function(self, event, ...)
 		self:RegisterEvent("CHAT_MSG_CURRENCY");
 		UpdatePlugin();
 		if (not CalendarOpened) then
-			C_Timer.After(1.0, function()
-				GameTimeFrame_OnClick(GameTimeFrame);
-				GameTimeFrame_OnClick(GameTimeFrame);
+			SafeCall(function()
+				C_Timer.After(1.0, function()
+					GameTimeFrame_OnClick(GameTimeFrame);
+					GameTimeFrame_OnClick(GameTimeFrame);
+				end);
+				CalendarOpened = true;
 			end);
-			CalendarOpened = true;
 		end
 		local _, month, day, year = CalendarGetDate();
 		local currentDate = tostring(year) .. tostring(month) .. tostring(day);
