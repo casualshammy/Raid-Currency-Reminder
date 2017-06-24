@@ -32,6 +32,9 @@ local quests = {
 	43895,	-- // 1000 gold
 	43896,	-- // 2000 gold
 	43897,	-- // 4000 gold
+	47851,	-- // 5 Mark of Honor
+	47864,	-- // 10 Mark of Honor
+	47865,	-- // 20 Mark of Honor
 };
 
 local holidayEvents = {
