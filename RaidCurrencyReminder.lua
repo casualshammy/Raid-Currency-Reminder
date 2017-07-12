@@ -42,6 +42,7 @@ local holidayEvents = {
 	["calendar_weekendwrathofthelichking"] = 44166,
 	["calendar_weekendcataclysm"] = 		 44167,
 	[1530589] = 45799,	-- // MoP
+	[1129674] = 44164,	-- // BC
 };
 
 ---------------------
