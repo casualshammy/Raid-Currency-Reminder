@@ -1,4 +1,8 @@
-﻿---------------------
+﻿--[===[@non-debug@
+local buildTimestamp = "@project-version@";
+--@end-non-debug@]===]
+
+---------------------
 ----- Constants -----
 ---------------------
 local SEAL_CURRENCY_ID = 1273;
