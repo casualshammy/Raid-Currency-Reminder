@@ -42,8 +42,9 @@ local quests = {
 };
 
 local holidayEvents = {
-	["calendar_weekendwrathofthelichking"] = 44166,
+	[1129686] = 44166,	-- // LK
 	[1304687] =	44167,	-- // Cata
+	[1304688] = 44167,	-- // Cata
 	[1530589] = 45799,	-- // MoP
 	[1129673] = 44164,	-- // BC
 	[1129674] = 44164,	-- // BC
