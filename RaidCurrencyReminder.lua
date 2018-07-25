@@ -11,7 +11,7 @@ local MAX_SEALS_PER_CHARACTER = 6;
 local MIN_CHARACTER_LEVEL_REQUIRED = 110;
 local SEAL_TEXTURE = [[Interface\Icons\inv_misc_elvencoins]];
 local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\inv_misc_elvencoins_bw.tga]];
-local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID);
+local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID, 0);
 local INTERVAL_BETWEEN_PERIODIC_CHAT_NOTIFICATIONS = 900;
 local MIN_INTERVAL_BETWEEN_PRINTS = 30;
 ---------------------
@@ -116,8 +116,8 @@ end
 ---------------------
 
 local function ShouldDeductOneSeal()
-	local _, month, day, year = CalendarGetDate();
-	local daysFromCivil = DaysFromCivil(year, month, day);
+	local date = C_Calendar.GetDate();
+	local daysFromCivil = DaysFromCivil(date.year, date.month, date.monthDay);
 	if (daysFromCivil - db.LastDateAskedAboutClassOrderHall > 5) then
 		return false;
 	else
@@ -142,10 +142,10 @@ local function GetNumAvailableSeals()
 		numQuestsAvailable = 0;
 	end
 	
-	local _, _, day = CalendarGetDate();
+	local date = C_Calendar.GetDate();
 	local cHour, cMinute = GetGameTime();
-	for eventIndex = 1, CalendarGetNumDayEvents(0, day) do
-		local _, eventHour, eventMinute, calendarType, sequenceType, _, texture = CalendarGetDayEvent(0, day, eventIndex);
+	for eventIndex = 1, C_Calendar.GetNumDayEvents(0, date.monthDay) do
+		local _, eventHour, eventMinute, calendarType, sequenceType, _, texture = C_Calendar.GetDayEvent(0, date.monthDay, eventIndex);
 		if (calendarType == "HOLIDAY") then
 			local questID = holidayEvents[texture];
 			if (questID ~= nil) then
@@ -304,8 +304,8 @@ local function ShowPopupAboutMissingSeals()
 				"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
 				"Have you got seal from work order this week?", SEAL_LINK),
 				function()
-					local _, month, day, year = CalendarGetDate();
-					db.LastDateAskedAboutClassOrderHall = DaysFromCivil(year, month, day);
+					local date = C_Calendar.GetDate();
+					db.LastDateAskedAboutClassOrderHall = DaysFromCivil(date.year, date.month, date.monthDay);
 					UpdatePlugin();
 				end,
 				function() end);
@@ -319,8 +319,8 @@ local function ShowPopupAboutMissingSeals()
 			msg(message);
 		end
 		db.LastTimeChecked = GetTime();
-		local _, month, day, year = CalendarGetDate();
-		db.LastDateChecked = tostring(year) .. tostring(month) .. tostring(day);
+		local date = C_Calendar.GetDate();
+		db.LastDateChecked = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
 	end
 end
 
@@ -333,8 +333,8 @@ local function ShowPopupAboutUnknownSeal()
 			"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
 			"Have you got seal from work order?", SEAL_LINK),
 			function()
-				local _, month, day, year = CalendarGetDate();
-				db.LastDateAskedAboutClassOrderHall = DaysFromCivil(year, month, day);
+				local date = C_Calendar.GetDate();
+				db.LastDateAskedAboutClassOrderHall = DaysFromCivil(date.year, date.month, date.monthDay);
 				UpdatePlugin();
 			end,
 			function() end);
@@ -400,8 +400,8 @@ newFrame:SetScript("OnEvent", function(self, event, ...)
 				CalendarOpened = true;
 			end);
 		end
-		local _, month, day, year = CalendarGetDate();
-		local currentDate = tostring(year) .. tostring(month) .. tostring(day);
+		local date = C_Calendar.GetDate();
+		local currentDate = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
 		if (currentDate ~= db.LastDateChecked) then
 			LastTimerPopupDisplayed = -INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS;
 		else
