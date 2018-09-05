@@ -5,12 +5,12 @@ local buildTimestamp = "@project-version@";
 ---------------------
 ----- Constants -----
 ---------------------
-local SEAL_CURRENCY_ID = 1273;
-local MAX_SEALS_FROM_QUESTS = 3;
-local MAX_SEALS_PER_CHARACTER = 6;
-local MIN_CHARACTER_LEVEL_REQUIRED = 110;
-local SEAL_TEXTURE = [[Interface\Icons\inv_misc_elvencoins]];
-local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\inv_misc_elvencoins_bw.tga]];
+local SEAL_CURRENCY_ID = 1580;
+local MAX_SEALS_FROM_QUESTS = 2;
+local MAX_SEALS_PER_CHARACTER = 5;
+local MIN_CHARACTER_LEVEL_REQUIRED = 120;
+local SEAL_TEXTURE = [[Interface\Icons\timelesscoin_yellow]];
+local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\timelesscoin_yellow_bw.tga]];
 local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID, 0);
 local INTERVAL_BETWEEN_PERIODIC_CHAT_NOTIFICATIONS = 900;
 local MIN_INTERVAL_BETWEEN_PRINTS = 30;
@@ -30,15 +30,12 @@ local INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS = 3600;
 local LastTimerPopupDisplayed;
 
 local quests = {
-	43892,	-- // 1000 class hall
-	43893,	-- // 2000 class hall
-	43894,	-- // 4000 class hall
-	43895,	-- // 1000 gold
-	43896,	-- // 2000 gold
-	43897,	-- // 4000 gold
-	47851,	-- // 5 Mark of Honor
-	47864,	-- // 10 Mark of Honor
-	47865,	-- // 20 Mark of Honor
+	52834, -- // 2000 gold
+	52838, -- // 5000 gold
+	52837, -- // 250 war resources
+	52840, -- // 500 war resources
+	52835, -- // 10 Marks of Honor
+	52839, -- // 25 Marks of Honor
 };
 
 local holidayEvents = {
