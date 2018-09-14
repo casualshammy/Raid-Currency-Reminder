@@ -307,7 +307,7 @@ local function ShowPopupAboutMissingSeals()
 				end,
 				function() end);
 		elseif (numFromQuests >= 1) then
-			message = message .. format("You can get %s %s from Archmage Lan'dalock in Dalaran\n", numFromQuests, SEAL_LINK);
+			message = message .. format("You can get %s %s from your faction vendor\n", numFromQuests, SEAL_LINK);
 		end
 		if (numFromHoliday > 0) then
 			message = message .. format("You can get one %s from weekly event", SEAL_LINK);
