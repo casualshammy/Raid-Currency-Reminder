@@ -12,8 +12,7 @@ local MIN_CHARACTER_LEVEL_REQUIRED = 120;
 local SEAL_TEXTURE = [[Interface\Icons\timelesscoin_yellow]];
 local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\timelesscoin_yellow_bw.tga]];
 local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID, 0);
-local INTERVAL_BETWEEN_PERIODIC_CHAT_NOTIFICATIONS = 900;
-local MIN_INTERVAL_BETWEEN_PRINTS = 30;
+local INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS = 3600;
 ---------------------
 ---------------------
 
@@ -23,11 +22,14 @@ local CalendarOpened = false;
 local LastTimePrint = 0;
 local db;
 local GotNewSeal = false;
+local TimerNotifications;
 
 RaidCurrencyReminderDB = RaidCurrencyReminderDB or { };
 local LocalPlayerFullName = UnitName("player").." - "..GetRealmName();
-local INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS = 3600;
+
 local LastTimerPopupDisplayed;
+
+local C_Timer_After = C_Timer.After;
 
 local quests = {
 	52834, -- // 2000 gold
@@ -52,10 +54,6 @@ local holidayEvents = {
 ------- Utils -------
 ---------------------
 
-local function ColorizeText(text, r, g, b)
-	return format("|cff%02x%02x%02x%s|r", r*255, g*255, b*255, text);
-end
-
 local function Print(...)
 	local text = "";
 	for i = 1, select("#", ...) do
@@ -72,20 +70,6 @@ local function CompareDates(hourA, minuteA, hourB, minuteB)
 	else
 		return false;
 	end
-end
-
-local function DaysFromCivil(y, m, d)
-	if (m <= 2) then
-		y = y - 1;
-		m = m + 9;
-    else
-		m = m - 3;
-    end
-    local era = math.floor(y/400);
-    local yoe = y - era * 400;     		                                   	-- [0, 399]
-    local doy = math.modf((153*m + 2)/5) + d-1;              		     	-- [0, 365]
-    local doe = yoe * 365 + math.modf(yoe/4) - math.modf(yoe/100) + doy;	-- [0, 146096]
-    return era * 146097 + doe - 719468;
 end
 
 local function SafeCall(func)
@@ -112,30 +96,14 @@ end
 ---------------------
 ---------------------
 
-local function ShouldDeductOneSeal()
-	local date = C_Calendar.GetDate();
-	local daysFromCivil = DaysFromCivil(date.year, date.month, date.monthDay);
-	if (daysFromCivil - db.LastDateAskedAboutClassOrderHall > 5) then
-		return false;
-	else
-		return true;
-	end
-end
-
 local function GetNumAvailableSeals()
-	local numQuestsAvailable;
-	if (ShouldDeductOneSeal()) then
-		numQuestsAvailable = MAX_SEALS_FROM_QUESTS - 1;
-	else
-		numQuestsAvailable = MAX_SEALS_FROM_QUESTS;
-	end
+	local numQuestsAvailable = MAX_SEALS_FROM_QUESTS;
 	for _, questID in pairs(quests) do
 		if (IsQuestFlaggedCompleted(questID)) then
 			numQuestsAvailable = numQuestsAvailable - 1;
 		end
 	end
 	if (numQuestsAvailable < 0) then
-		-- Print("RCR: MAX_SEALS_FROM_QUESTS has incorrect value!");
 		numQuestsAvailable = 0;
 	end
 	
@@ -274,7 +242,6 @@ end
 
 local function InitializeDB()
 	local defaults = {
-		LastDateAskedAboutClassOrderHall = 0,
 		LastTimeChecked = 0,
 		LastDateChecked = 0,
 		QuestsCompleted = 0,
@@ -287,6 +254,10 @@ local function InitializeDB()
 			RaidCurrencyReminderDB[LocalPlayerFullName][key] = value;
 		end
 	end
+	-- // remove obsolete entries
+	for _, key in pairs({ "LastDateAskedAboutClassOrderHall" }) do
+		RaidCurrencyReminderDB[LocalPlayerFullName][key] = nil;
+	end
 	db = RaidCurrencyReminderDB[LocalPlayerFullName];
 end
 
@@ -295,18 +266,7 @@ local function ShowPopupAboutMissingSeals()
 	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
 	if (numObtainable > 0) then
 		local message = "";
-		if (numFromQuests == 1 and not ShouldDeductOneSeal()) then
-			msgWithQuestion(format(
-				"You can get 1 %s\n\n" ..
-				"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
-				"Have you got seal from work order this week?", SEAL_LINK),
-				function()
-					local date = C_Calendar.GetDate();
-					db.LastDateAskedAboutClassOrderHall = DaysFromCivil(date.year, date.month, date.monthDay);
-					UpdatePlugin();
-				end,
-				function() end);
-		elseif (numFromQuests >= 1) then
+		if (numFromQuests > 0) then
 			message = message .. format("You can get %s %s from your faction vendor\n", numFromQuests, SEAL_LINK);
 		end
 		if (numFromHoliday > 0) then
@@ -321,28 +281,10 @@ local function ShowPopupAboutMissingSeals()
 	end
 end
 
-local function ShowPopupAboutUnknownSeal()
-	local numObtainable = GetNumObtainableSeals();
-	local numFromQuests, numFromHoliday = GetNumAvailableSeals();
-	if (numFromQuests > 0 and not ShouldDeductOneSeal()) then -- numObtainable > 0 and 
-		msgWithQuestion(format(
-			"You have just got %s from unknown source\n\n" ..
-			"Unfortunately, RCR can't determine if you got seal in your class order hall. If you haven't corresponding class order hall advancement, you can get seal from Archmage Lan'dalock in Dalaran\n\n" ..
-			"Have you got seal from work order?", SEAL_LINK),
-			function()
-				local date = C_Calendar.GetDate();
-				db.LastDateAskedAboutClassOrderHall = DaysFromCivil(date.year, date.month, date.monthDay);
-				UpdatePlugin();
-			end,
-			function() end);
-	end
-end
-
 local function CheckInfo()
 	local numQuestsCompleted = GetNumQuestsCompleted();
 	local obtainableSeals = GetNumObtainableSeals();
 	if (numQuestsCompleted < db.QuestsCompleted) then -- // seems like it's next raid week now
-		db.LastDateAskedAboutClassOrderHall = 0;
 		db.QuestsCompleted = numQuestsCompleted;
 		UpdatePlugin();
 	end
@@ -355,63 +297,61 @@ local function CheckInfo()
 		end
 	end
 	UpdatePlugin();
-	--print(format("1: Quests completed: %s; DB quest completed: %s; ObtainableSeals: %s; GetNumAvailableSeals: %s; ShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, obtainableSeals, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
-	C_Timer.After(1.0, CheckInfo);
 end
 
-local function OnNewSealReceived()
-	local numQuestsCompleted = GetNumQuestsCompleted();
-	if (db.QuestsCompleted ~= numQuestsCompleted) then
-		-- // we have completed quest in Dalaran
-		UpdatePlugin();
+local function StartTimerNotifications()
+	local date = C_Calendar.GetDate();
+	local currentDate = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
+	if (currentDate ~= db.LastDateChecked) then
+		LastTimerPopupDisplayed = -INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS;
 	else
-		-- // seems like we got seal from work order or mission
-		ShowPopupAboutUnknownSeal();
+		LastTimerPopupDisplayed = db.LastTimeChecked;
 	end
-	--print(format("2: Quests completed: %s; DB quest completed: %s; GetNumAvailableSeals: %s; ShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
-	db.QuestsCompleted = numQuestsCompleted;
+	TimerNotifications = C_Timer.NewTicker(INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS, CheckInfo);
 end
 
--- // todo: delete-start
-function y123()
-	local numQuestsCompleted = GetNumQuestsCompleted();
-	local obtainableSeals = GetNumObtainableSeals();
-	print(format("1: Quests completed: %s;\nDB quest completed: %s;\nObtainableSeals: %s;\nGetNumAvailableSeals: %s;\nShouldDeductOneSeal: %s", numQuestsCompleted, db.QuestsCompleted, obtainableSeals, GetNumAvailableSeals(), tostring(ShouldDeductOneSeal())));
-end
--- // todo: delete-end
-
-local newFrame = CreateFrame("frame");
-newFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
-newFrame:SetScript("OnEvent", function(self, event, ...)
-	if (event == "LOADING_SCREEN_DISABLED") then
+-- // frame for events
+do
+	
+	local eFrame = CreateFrame("frame");
+	eFrame:SetScript("OnEvent", function(self, event, ...) self[event](...); end);
+	eFrame:RegisterEvent("LOADING_SCREEN_DISABLED");
+	
+	eFrame.LOADING_SCREEN_DISABLED = function()
+		eFrame:UnregisterEvent("LOADING_SCREEN_DISABLED");
 		InitializeDB();
-		self:UnregisterEvent("LOADING_SCREEN_DISABLED");
-		self:RegisterEvent("CHAT_MSG_CURRENCY");
-		UpdatePlugin();
+		eFrame:RegisterEvent("CHAT_MSG_CURRENCY");
+		eFrame:RegisterEvent("BONUS_ROLL_RESULT");
 		if (not CalendarOpened) then
 			SafeCall(function()
-				C_Timer.After(1.0, function()
+				C_Timer_After(1.0, function()
 					GameTimeFrame_OnClick(GameTimeFrame);
 					GameTimeFrame_OnClick(GameTimeFrame);
 				end);
 				CalendarOpened = true;
 			end);
 		end
-		local date = C_Calendar.GetDate();
-		local currentDate = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
-		if (currentDate ~= db.LastDateChecked) then
-			LastTimerPopupDisplayed = -INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS;
-		else
-			LastTimerPopupDisplayed = db.LastTimeChecked;
-		end
-		C_Timer.After(1.0, function()
+		StartTimerNotifications(); -- // call it before 'CheckInfo' on startup
+		C_Timer_After(1.0, CheckInfo);
+	end
+	
+	local function OnNewSealReceived()
+		local numQuestsCompleted = GetNumQuestsCompleted();
+		if (db.QuestsCompleted ~= numQuestsCompleted) then
+			-- // we have completed quest in Dalaran
 			UpdatePlugin();
-			CheckInfo();
-		end);
-	elseif (event == "CHAT_MSG_CURRENCY") then
-		local msg = ...;
-		if (msg:find(SEAL_LINK, 1, true)) then
-			C_Timer.After(1.0, OnNewSealReceived);
+		else
+			-- // seems like we got seal from work order or mission
+		end
+		db.QuestsCompleted = numQuestsCompleted;
+	end
+	
+	eFrame.CHAT_MSG_CURRENCY = function(message)
+		if (message:find(SEAL_LINK, 1, true)) then
+			C_Timer_After(1.0, OnNewSealReceived);
 		end
 	end
-end);
+	
+	eFrame.BONUS_ROLL_RESULT = CheckInfo; -- [11:33:09] BONUS_ROLL_RESULT item [Исторгнутый пламенный посох очистителя] 1 264 2 false nil
+	
+end
