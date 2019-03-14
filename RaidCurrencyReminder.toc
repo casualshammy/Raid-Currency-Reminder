@@ -1,4 +1,4 @@
-## Interface: 80000
+## Interface: 80100
 ## Title: Raid Currency Reminder
 ## Notes: You won't forget to buy bonus roll items!
 ## SavedVariables: RaidCurrencyReminderDB
