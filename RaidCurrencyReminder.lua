@@ -8,10 +8,10 @@ local buildTimestamp = "@project-version@";
 local SEAL_CURRENCY_ID = 1580;
 local MAX_SEALS_FROM_QUESTS = 2;
 local MAX_SEALS_PER_CHARACTER = 5;
-local MIN_CHARACTER_LEVEL_REQUIRED = 120;
+local MIN_CHARACTER_LEVEL_REQUIRED = 50;
 local SEAL_TEXTURE = [[Interface\Icons\timelesscoin_yellow]];
 local SEAL_TEXTURE_BW = [[Interface\AddOns\RaidCurrencyReminder\media\timelesscoin_yellow_bw.tga]];
-local SEAL_LINK = GetCurrencyLink(SEAL_CURRENCY_ID, 0);
+local SEAL_LINK = C_CurrencyInfo.GetCurrencyLink(SEAL_CURRENCY_ID, 0);
 local INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS = 3600;
 ---------------------
 ---------------------
@@ -23,6 +23,7 @@ local LastTimePrint = 0;
 local db;
 local GotNewSeal = false;
 local TimerNotifications;
+GetCurrencyInfo = C_CurrencyInfo.GetCurrencyInfo;
 
 RaidCurrencyReminderDB = RaidCurrencyReminderDB or { };
 local LocalPlayerFullName = UnitName("player").." - "..GetRealmName();
@@ -99,7 +100,7 @@ end
 local function GetNumAvailableSeals()
 	local numQuestsAvailable = MAX_SEALS_FROM_QUESTS;
 	for _, questID in pairs(quests) do
-		if (IsQuestFlaggedCompleted(questID)) then
+		if (C_QuestLog.IsQuestFlaggedCompleted(questID)) then
 			numQuestsAvailable = numQuestsAvailable - 1;
 		end
 	end
@@ -107,7 +108,7 @@ local function GetNumAvailableSeals()
 		numQuestsAvailable = 0;
 	end
 	
-	local date = C_Calendar.GetDate();
+	local date = C_DateAndTime.GetCurrentCalendarTime();
 	local cHour, cMinute = GetGameTime();
 	for eventIndex = 1, C_Calendar.GetNumDayEvents(0, date.monthDay) do
 		local _, eventHour, eventMinute, calendarType, sequenceType, _, texture = C_Calendar.GetDayEvent(0, date.monthDay, eventIndex);
@@ -115,7 +116,7 @@ local function GetNumAvailableSeals()
 			local questID = holidayEvents[texture];
 			if (questID ~= nil) then
 				if ((sequenceType == "END" and CompareDates(cHour, cMinute, eventHour, eventMinute)) or (sequenceType == "START" and CompareDates(eventHour, eventMinute, cHour, cMinute)) or (sequenceType == "ONGOING" or sequenceType == "INFO")) then
-					if (not IsQuestFlaggedCompleted(questID)) then
+					if (not C_QuestLog.IsQuestFlaggedCompleted(questID)) then
 						return numQuestsAvailable, 1;
 					end
 				end
@@ -127,9 +128,9 @@ end
 
 local function GetNumObtainableSeals()
 	if (UnitLevel("player") >= MIN_CHARACTER_LEVEL_REQUIRED) then
-		local _, amount = GetCurrencyInfo(SEAL_CURRENCY_ID);
+		local info = GetCurrencyInfo(SEAL_CURRENCY_ID);
 		local amountFromRegularQuests, amountFromHoliday = GetNumAvailableSeals();
-		return min(amountFromRegularQuests + amountFromHoliday, MAX_SEALS_PER_CHARACTER - amount);
+		return min(amountFromRegularQuests + amountFromHoliday, MAX_SEALS_PER_CHARACTER - info.quantity);
 	else
 		return 0;
 	end
@@ -153,13 +154,13 @@ local function UpdatePlugin()
 		LDBPlugin.OnTooltipShow = function(tooltip)
 			tooltip:AddLine("Raid Currency Reminder");
 			tooltip:AddLine(" ");
-			local _, amount = GetCurrencyInfo(SEAL_CURRENCY_ID);
-			tooltip:AddLine(format("You have %d %s", amount, SEAL_LINK));
+			local info = GetCurrencyInfo(SEAL_CURRENCY_ID);
+			tooltip:AddLine(format("You have %d %s", info.quantity, SEAL_LINK));
 			if (numObtainable == 0) then
 				if ((numFromHoliday + numFromQuests) == 0) then
 					tooltip:AddLine("You have already got all possible "..SEAL_LINK);
 				else
-					if (amount == MAX_SEALS_PER_CHARACTER) then
+					if (info.quantity == MAX_SEALS_PER_CHARACTER) then
 						tooltip:AddLine(format("You can't obtain more %s because you have reached the cap (%s)", SEAL_LINK, MAX_SEALS_PER_CHARACTER));
 					else
 						tooltip:AddLine(format("You can't obtain more %s because you have not reached %s level", SEAL_LINK, MIN_CHARACTER_LEVEL_REQUIRED));
@@ -182,7 +183,7 @@ end
 local function GetNumQuestsCompleted()
 	local num = 0;
 	for _, questID in pairs(quests) do
-		if (IsQuestFlaggedCompleted(questID)) then
+		if (C_QuestLog.IsQuestFlaggedCompleted(questID)) then
 			num = num + 1;
 		end
 	end
@@ -276,7 +277,7 @@ local function ShowPopupAboutMissingSeals()
 			msg(message);
 		end
 		db.LastTimeChecked = GetTime();
-		local date = C_Calendar.GetDate();
+		local date = C_DateAndTime.GetCurrentCalendarTime();
 		db.LastDateChecked = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
 	end
 end
@@ -300,7 +301,7 @@ local function CheckInfo()
 end
 
 local function StartTimerNotifications()
-	local date = C_Calendar.GetDate();
+	local date = C_DateAndTime.GetCurrentCalendarTime();
 	local currentDate = tostring(date.year) .. tostring(date.month) .. tostring(date.monthDay);
 	if (currentDate ~= db.LastDateChecked) then
 		LastTimerPopupDisplayed = -INTERVAL_BETWEEN_PERIODIC_POPUP_NOTIFICATIONS;
